@@ -1,0 +1,65 @@
+--EMP(ENO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, DEPTNO)
+declare @Employee  table ( Eno int,Ename varchar(100),Job varchar(100), Mgr int, hiredate datetime,sal int,comm int, deptno int)
+
+insert @Employee (ENO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, DEPTNO)
+select '1','vedaraj','DBA','5','2012-02-03','230000','362','1' union all
+select '2','rajendran',' Sr Developer','5','2012-02-03','210000','362','1' union all
+select '5','Kamal','PROD Support','7','2012-02-03','200000','362','1' union all
+select '7','Kishore','Proj Mgr','','2012-02-03','295000','362','1' union all
+
+select '6','kannan','DBA 2','9','2012-02-03','250000','362','1' union all
+select '9','kumar',' Sr Developer II','10','2012-02-03','240000','362','1' union all
+select '10','pandian','PROD Support II','12','2012-02-03','200000','362','1' union all
+select '12','nathan','Proj Mgr II','','2012-02-03','245000','362','1'  union all
+
+select '13','Mark','DBA III','14','2012-02-03','200000','362','1' union all
+select '14','Jess',' Sr Developer III','15','2012-02-03','210000','362','1' union all
+select '15','Calvin','PROD Support III','16','2012-02-03','220000','362','1' union all
+select '16','Jack','Proj Mgr III','','2012-02-03','205000','362','1' 
+
+select * from @Employee;
+declare @Total INt,@start Int=1
+declare @TopManager Table (RowID int identity(1,1),MgrNo int,Salary int)
+
+;with cte_emp as
+(
+select eno,ename,sal salary,mgr, 0 level,0 mgr_sal from @Employee where mgr=0
+union all
+select e.eno,e.ename,e.sal,e.mgr, cte.level+1 ,cte.salary 
+from @Employee e join cte_emp cte
+on cte.eno=e.mgr
+)
+insert @TopManager(MgrNo ,Salary)
+select mgr,mgr_sal from cte_emp where mgr_sal < salary
+and level >0
+order by level 
+
+select @total =@@rowcount
+--select @total
+declare @mgrno int,@mgrsal int
+ --select * from @TopManager
+ while @start <=@total
+begin
+print @start
+select @mgrno=MgrNo,@mgrsal=Salary from @TopManager where  rowid=@start
+
+;with cte_emp as
+(
+select eno,ename,sal salary,mgr, 0 level,0 mgr_sal from @Employee where eno=@mgrno
+union all
+select e.eno,e.ename,e.sal,e.mgr, cte.level+1 ,cte.salary 
+from @Employee e join cte_emp cte
+on cte.eno=e.mgr
+)
+update @Employee
+set e.sal=@mgrsal
+from @Employee e
+join cte_emp cte on e.eno=cte.eno
+where e.sal > @mgrsal
+
+select @start=@start+1
+end
+
+select * from @Employee
+
+
